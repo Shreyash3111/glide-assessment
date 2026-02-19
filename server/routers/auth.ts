@@ -7,6 +7,14 @@ import { db } from "@/lib/db";
 import { users, sessions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+];
+
 export const authRouter = router({
   signup: publicProcedure
     .input(
@@ -55,7 +63,13 @@ export const authRouter = router({
         ssn: z.string().regex(/^\d{9}$/),
         address: z.string().min(1),
         city: z.string().min(1),
-        state: z.string().length(2).toUpperCase(),
+        state: z
+          .string()
+          .length(2, "State must be a 2-letter code")
+          .transform((val) => val.toUpperCase())
+          .refine((val) => US_STATES.includes(val), {
+            message: "Invalid US state code",
+          }),
         zipCode: z.string().regex(/^\d{5}$/),
       })
     )
