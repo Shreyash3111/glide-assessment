@@ -29,7 +29,9 @@ export const authRouter = router({
           .regex(/[^A-Za-z0-9]/, "Password must include a special character"),
         firstName: z.string().min(1),
         lastName: z.string().min(1),
-        phoneNumber: z.string().regex(/^\+?\d{10,15}$/),
+        phoneNumber: z
+          .string()
+          .regex(/^\+[1-9]\d{7,14}$/, "Phone number must be in international format (e.g., +14155552671)"),
         dateOfBirth: z.
             string().superRefine((dob, ctx) => {
               const birthDate = new Date(dob);
