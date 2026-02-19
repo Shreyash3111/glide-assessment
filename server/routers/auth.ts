@@ -16,33 +16,36 @@ export const authRouter = router({
         firstName: z.string().min(1),
         lastName: z.string().min(1),
         phoneNumber: z.string().regex(/^\+?\d{10,15}$/),
-        dateOfBirth: z
-          .string()
-          .refine((dob) => {
-            const birthDate = new Date(dob);
-            const today = new Date();
-            return birthDate < today;
-          }, {
-            message: "Date of birth must be in the past",
-          })
-          .refine((dob) => {
-            const birthDate = new Date(dob);
-            const today = new Date();
+        dateOfBirth: z.
+            string().superRefine((dob, ctx) => {
+              const birthDate = new Date(dob);
+              const today = new Date();
 
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
+              if (birthDate >= today) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: "Date of birth must be in the past",
+                });
+                return;
+              }
 
-            if (
-              monthDiff < 0 ||
-              (monthDiff === 0 && today.getDate() < birthDate.getDate())
-            ) {
-              age--;
-            }
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const monthDiff = today.getMonth() - birthDate.getMonth();
 
-            return age >= 18;
-          }, {
-            message: "You must be at least 18 years old",
-          }),
+              if (
+                monthDiff < 0 ||
+                (monthDiff === 0 && today.getDate() < birthDate.getDate())
+              ) {
+                age--;
+              }
+
+              if (age < 18) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: "You must be at least 18 years old",
+                });
+              }
+            }),
         ssn: z.string().regex(/^\d{9}$/),
         address: z.string().min(1),
         city: z.string().min(1),
@@ -87,6 +90,8 @@ export const authRouter = router({
 
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await db.delete(sessions).where(eq(sessions.userId, user.id));
 
       await db.insert(sessions).values({
         userId: user.id,
@@ -137,6 +142,8 @@ export const authRouter = router({
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
+      await db.delete(sessions).where(eq(sessions.userId, user.id));
+
       await db.insert(sessions).values({
         userId: user.id,
         token,
@@ -165,9 +172,10 @@ export const authRouter = router({
           .find((c: string) => c.startsWith("session="))
           ?.split("=")[1];
       }
-      if (token) {
-        await db.delete(sessions).where(eq(sessions.token, token));
+      if (ctx.user) {
+        await db.delete(sessions).where(eq(sessions.userId, ctx.user.id));
       }
+
     }
 
     if ("setHeader" in ctx.res) {
