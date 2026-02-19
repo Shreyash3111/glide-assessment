@@ -68,7 +68,7 @@ export function TransactionList({ accountId }: TransactionListProps) {
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {transaction.description ? <span dangerouslySetInnerHTML={{ __html: transaction.description }} /> : "-"}
+                {transaction.description ? <span>{transaction.description}</span> : "-"}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <span className={transaction.type === "deposit" ? "text-green-600" : "text-red-600"}>
