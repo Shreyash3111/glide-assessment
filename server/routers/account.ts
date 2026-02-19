@@ -74,7 +74,7 @@ export const accountRouter = router({
     .input(
       z.object({
         accountId: z.number(),
-        amount: z.number().positive(),
+        amount: z.number().gt(0, "Amount must be greater than zero"),
         fundingSource: z.object({
           type: z.enum(["card", "bank"]),
           accountNumber: z.string(),
@@ -84,6 +84,12 @@ export const accountRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const amount = parseFloat(input.amount.toString());
+        if (amount <= 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Funding amount must be greater than zero",
+          });
+        }
 
       // Verify account belongs to user
       const account = await db
