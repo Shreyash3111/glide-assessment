@@ -4,6 +4,26 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { trpc } from "@/lib/trpc/client";
 
+function isValidCardNumber(number: string) {
+  const cleaned = number.replace(/\D/g, "");
+  let sum = 0;
+  let shouldDouble = false;
+
+  for (let i = cleaned.length - 1; i >= 0; i--) {
+    let digit = parseInt(cleaned[i], 10);
+
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+
+  return sum % 10 === 0;
+}
+
 interface FundingModalProps {
   accountId: number;
   onClose: () => void;
@@ -119,7 +139,7 @@ export function FundingModal({ accountId, onClose, onSuccess }: FundingModalProp
                 validate: {
                   validCard: (value) => {
                     if (fundingType !== "card") return true;
-                    return value.startsWith("4") || value.startsWith("5") || "Invalid card number";
+                    return isValidCardNumber(value) || "Invalid card number";
                   },
                 },
               })}
