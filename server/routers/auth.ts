@@ -16,7 +16,33 @@ export const authRouter = router({
         firstName: z.string().min(1),
         lastName: z.string().min(1),
         phoneNumber: z.string().regex(/^\+?\d{10,15}$/),
-        dateOfBirth: z.string(),
+        dateOfBirth: z
+          .string()
+          .refine((dob) => {
+            const birthDate = new Date(dob);
+            const today = new Date();
+            return birthDate < today;
+          }, {
+            message: "Date of birth must be in the past",
+          })
+          .refine((dob) => {
+            const birthDate = new Date(dob);
+            const today = new Date();
+
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+
+            if (
+              monthDiff < 0 ||
+              (monthDiff === 0 && today.getDate() < birthDate.getDate())
+            ) {
+              age--;
+            }
+
+            return age >= 18;
+          }, {
+            message: "You must be at least 18 years old",
+          }),
         ssn: z.string().regex(/^\d{9}$/),
         address: z.string().min(1),
         city: z.string().min(1),
@@ -35,10 +61,13 @@ export const authRouter = router({
       }
 
       const hashedPassword = await bcrypt.hash(input.password, 10);
+      const hashedSSN = await bcrypt.hash(input.ssn, 10);
+
 
       await db.insert(users).values({
         ...input,
         password: hashedPassword,
+        ssn: hashedSSN,
       });
 
       // Fetch the created user

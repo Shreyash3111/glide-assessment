@@ -60,8 +60,14 @@ export default function SignupPage() {
       await signupMutation.mutateAsync(data);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    }
+  const message =
+    err?.data?.zodError?.fieldErrors?.dateOfBirth?.[0] ||
+    err.message ||
+    "Something went wrong";
+
+  setError(message);
+}
+
   };
 
   return (
