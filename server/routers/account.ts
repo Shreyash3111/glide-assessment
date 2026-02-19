@@ -3,8 +3,9 @@ import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../trpc";
 import { db } from "@/lib/db";
 import { accounts, transactions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import crypto from "crypto";
+
 
 function generateAccountNumber(): string {
   return crypto.randomInt(1000000000, 9999999999).toString();
@@ -160,9 +161,10 @@ export const accountRouter = router({
       }
 
       const accountTransactions = await db
-        .select()
-        .from(transactions)
-        .where(eq(transactions.accountId, input.accountId));
+                  .select()
+                  .from(transactions)
+                  .where(eq(transactions.accountId, input.accountId))
+                  .orderBy(desc(transactions.createdAt));
 
       const enrichedTransactions = [];
       for (const transaction of accountTransactions) {
