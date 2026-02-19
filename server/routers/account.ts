@@ -119,7 +119,13 @@ export const accountRouter = router({
       });
 
       // Fetch the created transaction
-      const transaction = await db.select().from(transactions).orderBy(transactions.createdAt).limit(1).get();
+      const transaction = await db
+              .select()
+              .from(transactions)
+              .where(eq(transactions.accountId, input.accountId))
+              .orderBy(transactions.createdAt)
+              .limit(1)
+              .get();
 
       // Update account balance
       const newBalance = account.balance + amount;
