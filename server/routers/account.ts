@@ -75,11 +75,23 @@ export const accountRouter = router({
       z.object({
         accountId: z.number(),
         amount: z.number().gt(0, "Amount must be greater than zero"),
-        fundingSource: z.object({
-          type: z.enum(["card", "bank"]),
-          accountNumber: z.string(),
-          routingNumber: z.string().optional(),
-        }),
+        fundingSource: z
+          .object({
+            type: z.enum(["card", "bank"]),
+            accountNumber: z.string(),
+            routingNumber: z.string().optional(),
+          })
+          .superRefine((data, ctx) => {
+            if (data.type === "bank") {
+              if (!data.routingNumber) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: "Routing number is required for bank transfers",
+                  path: ["routingNumber"],
+                });
+              }
+            }
+          }),
       })
     )
     .mutation(async ({ input, ctx }) => {
