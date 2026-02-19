@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { AccountCreationModal } from "@/components/AccountCreationModal";
 import { FundingModal } from "@/components/FundingModal";
 import { TransactionList } from "@/components/TransactionList";
+
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -13,8 +14,32 @@ export default function DashboardPage() {
   const [fundingAccountId, setFundingAccountId] = useState<number | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
-  const { data: accounts, refetch: refetchAccounts } = trpc.account.getAccounts.useQuery();
+  const {
+  data: accounts,
+  refetch: refetchAccounts,
+  error,
+  isLoading,
+} = trpc.account.getAccounts.useQuery();
   const logoutMutation = trpc.auth.logout.useMutation();
+
+  useEffect(() => {
+    
+  if (error?.data?.code === "UNAUTHORIZED") {
+    router.push("/login");
+  }
+}, [error, router]);
+
+  if (isLoading || error?.data?.code === "UNAUTHORIZED") {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        <p className="text-gray-600 text-sm">Checking session...</p>
+      </div>
+    </div>
+  );
+}
+
 
   const handleLogout = async () => {
     await logoutMutation.mutateAsync();
