@@ -91,7 +91,7 @@ export function FundingModal({ accountId, onClose, onSuccess }: FundingModalProp
                 {...register("amount", {
                   required: "Amount is required",
                   pattern: {
-                    value: /^\d+\.?\d{0,2}$/,
+                    value: /^(0|[1-9]\d*)(\.\d{1,2})?$/,
                     message: "Invalid amount format",
                   },
                   min: {
@@ -103,6 +103,10 @@ export function FundingModal({ accountId, onClose, onSuccess }: FundingModalProp
                     message: "Amount cannot exceed $10,000",
                   },
                 })}
+                onBlur={(e) => {
+                  const normalized = parseFloat(e.target.value).toFixed(2);
+                  e.target.value = normalized;
+                }}
                 type="text"
                 className="pl-7 block w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2 border"
                 placeholder="0.00"
