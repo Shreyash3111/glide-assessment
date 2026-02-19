@@ -11,7 +11,7 @@ export const authRouter = router({
   signup: publicProcedure
     .input(
       z.object({
-        email: z.string().email().toLowerCase(),
+        email: z.string().email(),
         password: z
           .string()
           .min(8, "Password must be at least 8 characters")
@@ -60,7 +60,16 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const existingUser = await db.select().from(users).where(eq(users.email, input.email)).get();
+      const normalizedEmail = input.email.trim().toLowerCase();
+      const commonTypos = [".con", ".cmo", ".cim", ".cm"];
+
+      if (commonTypos.some(t => normalizedEmail.endsWith(t))) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Email domain looks incorrect. Did you mean .com?",
+        });
+      }
+      const existingUser = await db.select().from(users).where(eq(users.email, normalizedEmail)).get();
 
       if (existingUser) {
         throw new TRPCError({
@@ -75,12 +84,13 @@ export const authRouter = router({
 
       await db.insert(users).values({
         ...input,
+        email: normalizedEmail,
         password: hashedPassword,
         ssn: hashedSSN,
       });
 
       // Fetch the created user
-      const user = await db.select().from(users).where(eq(users.email, input.email)).get();
+      const user = await db.select().from(users).where(eq(users.email, normalizedEmail)).get();
 
       if (!user) {
         throw new TRPCError({
@@ -123,7 +133,8 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const user = await db.select().from(users).where(eq(users.email, input.email)).get();
+      const normalizedEmail = input.email.trim().toLowerCase();
+      const user = await db.select().from(users).where(eq(users.email, normalizedEmail)).get();
 
       if (!user) {
         throw new TRPCError({
